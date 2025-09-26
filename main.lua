@@ -1,0 +1,68 @@
+-- name: Prime64 [WIP]
+-- description: Prime 64 concept
+--------------------------------------------------------------------------------------------------------
+--------Testing--------
+function spawn_guns()
+    local m = gMarioStates[0]
+    --djui_chat_message_create(tostring(m.intendedMag))
+    if m.controller.buttonPressed & L_JPAD ~= 0 then
+        spawn_non_sync_object(id_bhvItemPowerup, E_MODEL_NONE, 3983, -511, -2269, function (powerup) powerup.oBehParams = 1 end) --Spawn Varia Suit Upgrade
+    end
+    if m.controller.buttonPressed & R_JPAD ~= 0 then
+    end
+    if m.controller.buttonPressed & D_JPAD ~= 0 then
+    end
+    if m.controller.buttonPressed & U_JPAD ~= 0 then
+    end
+end
+hook_event(HOOK_UPDATE, spawn_guns)
+
+--------locals--------
+local network_player_connected_count,init_single_mario,warp_to_level,play_sound,network_is_server,network_get_player_text_color_string,djui_chat_message_create,disable_time_stop,network_player_set_description,set_mario_action,obj_get_first_with_behavior_id,obj_check_hitbox_overlap,spawn_mist_particles,vec3f_dist,play_race_fanfare,play_music,djui_hud_set_resolution,djui_hud_get_screen_height,djui_hud_get_screen_width,djui_hud_render_rect,djui_hud_set_font,djui_hud_world_pos_to_screen_pos,clampf,math_floor,djui_hud_measure_text,djui_hud_print_text,hud_render_power_meter,hud_get_value,save_file_erase_current_backup_save,save_file_set_flags,save_file_set_using_backup_slot,find_floor_height,spawn_non_sync_object,set_environment_region,vec3f_set,vec3f_copy,math_random,set_ttc_speed_setting,get_level_name,hud_hide,smlua_text_utils_secret_star_replace,smlua_audio_utils_replace_sequence = network_player_connected_count,init_single_mario,warp_to_level,play_sound,network_is_server,network_get_player_text_color_string,djui_chat_message_create,disable_time_stop,network_player_set_description,set_mario_action,obj_get_first_with_behavior_id,obj_check_hitbox_overlap,spawn_mist_particles,vec3f_dist,play_race_fanfare,play_music,djui_hud_set_resolution,djui_hud_get_screen_height,djui_hud_get_screen_width,djui_hud_render_rect,djui_hud_set_font,djui_hud_world_pos_to_screen_pos,clampf,math.floor,djui_hud_measure_text,djui_hud_print_text,hud_render_power_meter,hud_get_value,save_file_erase_current_backup_save,save_file_set_flags,save_file_set_using_backup_slot,find_floor_height,spawn_non_sync_object,set_environment_region,vec3f_set,vec3f_copy,math.random,set_ttc_speed_setting,get_level_name,hud_hide,smlua_text_utils_secret_star_replace,smlua_audio_utils_replace_sequence
+local texcrosshair = get_texture_info('crosshair')
+local texcrosshairActive = get_texture_info('crosshair_active')
+local texSwordCrosshair = get_texture_info('sword_crosshair')
+local texSwordCrosshairActive = get_texture_info('sword_crosshair_active')
+local curr_sighting_range = 10000 --This will be dependent on the currently held gun. 5000 is just a placeholder until I get some tables worked in.
+heldweapon = nil
+
+------------CANCEL ATTACK BUTTON---------------
+function cancel_actions(m, action)
+    if action == ACT_PUNCHING and m.heldObj ~= nil then return 0 end
+    if action == ACT_THROWING and m.heldObj ~= nil then return 0 end
+    if action == ACT_HEAVY_THROW and m.heldObj ~= nil then return 0 end
+end
+hook_event(HOOK_BEFORE_SET_MARIO_ACTION, cancel_actions)
+------------------------------------------------------------------------
+function on_warp()
+    stream_stop_all()
+end
+hook_event(HOOK_ON_WARP, on_warp)
+------------------------------------------------------------------------
+
+
+function hud()
+    local m = gMarioStates[0]
+    local s = gStateExtras[0]
+    local screenHeight = djui_hud_get_screen_height()
+    local screenWidth = djui_hud_get_screen_width()
+    ----------------------------------------
+    if s.fpsEnabled then
+        set_first_person_enabled(true)
+        local crosshair_width = texcrosshair.width
+        local crosshair_height = texcrosshair.height
+
+        m.marioBodyState.allowPartRotation = 0
+        djui_hud_set_resolution(RESOLUTION_DJUI);
+
+        if s.enemyTargeted ~= nil then
+            --djui_hud_render_texture(heldweapon.activeReticle, ((screenWidth-crosshair_width)/2), ((screenHeight-crosshair_height)/2), 1, 1)
+        else
+            --djui_hud_render_texture(heldweapon.reticle, ((screenWidth-crosshair_width)/2), ((screenHeight-crosshair_height)/2), 1, 1)
+        end
+    end
+end
+hook_event(HOOK_ON_HUD_RENDER, hud)
+
+
+
