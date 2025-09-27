@@ -1,5 +1,3 @@
--- RTD Utilities n' shit
-
 ------------------------------------------------------------------------------------------------------------------------------------------------
 
 define_custom_obj_fields({
@@ -37,26 +35,14 @@ end
 hook_event(HOOK_ON_LEVEL_INIT, modsupport)
 
 ------------------------------------------------------------------------------------------------------------------------------------------------
--------- Mod Menu
-
-local function disable_bullshit()
-	bullshit = false
-end
-hook_mod_menu_checkbox("Disable Bullshit", false, disable_bullshit)
-
-------------------------------------------------------------------------------------------------------------------------------------------------
 -------- gStateExtras
 gStateExtras = {}
 for i = 0, MAX_PLAYERS-1 do
 	gStateExtras[i] = {
 		invisible = 0,
-		scopeZoom = false,
-		enemyTargeted = nil
+		variaSuit = false,
 	}
 end
-
--------- PlayerSync
-gPlayerSyncTable[0].lunging = false
 
 
 ------------------------------------------------------------------------------------------------------------------------------------------------

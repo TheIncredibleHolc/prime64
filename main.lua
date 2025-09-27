@@ -9,8 +9,10 @@ function spawn_guns()
         spawn_non_sync_object(id_bhvItemPowerup, E_MODEL_NONE, 3983, -511, -2269, function (powerup) powerup.oBehParams = 1 end) --Spawn Varia Suit Upgrade
     end
     if m.controller.buttonPressed & R_JPAD ~= 0 then
+        spawn_non_sync_object(id_bhvStaticObject, E_MODEL_ARM_CANNON, m.pos.x, m.pos.y + 130, m.pos.z, function (arm) obj_scale(arm, 3) end)
     end
     if m.controller.buttonPressed & D_JPAD ~= 0 then
+        spawn_non_sync_object(id_bhvItemPowerup, E_MODEL_NONE, m.pos.x + 150, m.pos.y, m.pos.z + 150, function (powerup) powerup.oBehParams = 1 end) --Spawn Varia Suit Upgrade
     end
     if m.controller.buttonPressed & U_JPAD ~= 0 then
     end
@@ -39,8 +41,6 @@ function on_warp()
 end
 hook_event(HOOK_ON_WARP, on_warp)
 ------------------------------------------------------------------------
-
-
 function hud()
     local m = gMarioStates[0]
     local s = gStateExtras[0]
@@ -64,5 +64,70 @@ function hud()
 end
 hook_event(HOOK_ON_HUD_RENDER, hud)
 
+------------------------------------------------------------------------
+-- Track custom jumps per player
+local customJumps = {}
 
+local function change_inputs(m)
+    if m.playerIndex ~= 0 then return end
+    local pressed = m.controller.buttonPressed
+    if not customJumps[m.playerIndex] then
+        customJumps[m.playerIndex] = 0
+    end
+    if m.action & ACT_FLAG_AIR == 0 then
+        customJumps[m.playerIndex] = 0
+    end
+    
+    --Jump and Double Jump unless you walk off a cliff or something, then it starts at 1 jump already.
+    if (pressed & A_BUTTON) ~= 0 and customJumps[m.playerIndex] < 2 then
+        customJumps[m.playerIndex] = customJumps[m.playerIndex] + 1
+        if customJumps[m.playerIndex] < 2 then
+            local_play(sJump1, m.pos, 0.4)
+        else
+            local_play(sJump2, m.pos, 0.4)
+        end
+        -- give upward velocity
+        if m.action & ACT_FLAG_AIR ~= 0 then
+            m.vel.y = 55
+        else
+            m.pos.y = m.floorHeight + 5
+            m.vel.y = 65
+            set_mario_action(m, ACT_FREEFALL, 0)
+        end
+        return pressed & A_BUTTON ~(A_BUTTON)
+    end
 
+    if (pressed & B_BUTTON) ~= 0 then
+        local armcannon = obj_get_nearest_object_with_behavior_id(m.marioObj, id_bhvArmCannon)
+        if armcannon ~= nil then
+            local yaw   = gFirstPersonCamera.yaw
+            local pitch = gFirstPersonCamera.pitch
+            local spawnDist = -300
+            local sx = armcannon.oPosX + spawnDist * sins(yaw) * coss(pitch)
+            local sy = armcannon.oPosY + spawnDist * sins(pitch)
+            local sz = armcannon.oPosZ + spawnDist * coss(yaw) * coss(pitch)
+            spawn_non_sync_object(id_bhvPbeamProj, E_MODEL_PROJ_PBEAM, sx, sy, sz, function (beam)
+                beam.oFaceAngleYaw   = yaw + 32768
+                beam.oMoveAngleYaw   = beam.oFaceAngleYaw
+                beam.oFaceAnglePitch = pitch
+                beam.oMoveAnglePitch = pitch
+            end)
+            local_play(sPowBeam, m.pos, 0.6)
+        end
+        return pressed & ~B_BUTTON
+    end
+    m.input = m.input & ~(INPUT_A_PRESSED | INPUT_B_PRESSED)
+end
+
+hook_event(HOOK_BEFORE_MARIO_UPDATE, change_inputs)
+
+------------------------------------------------------------------------
+hook_event(HOOK_BEFORE_SET_MARIO_ACTION, function(m, action)
+    if action == ACT_JUMP then
+        djui_chat_message_create("Cancelled action!")
+        return 1
+    end
+    if action == ACT_PUNCHING or action == ACT_MOVE_PUNCHING or action == ACT_DIVE or action == ACT_JUMP_KICK or action == ACT_DOUBLE_JUMP then
+        return 1
+    end
+end)

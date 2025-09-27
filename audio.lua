@@ -26,7 +26,7 @@ end
 
 function ambient_play(a)
 	if ambientPlaying then audio_stream_stop(ambientPlaying) end
-	audio_stream_play(a, true, 1)
+	audio_stream_play(a, true, 0)
 	ambientPlaying = a
 	fadeTimer = 0
 end
@@ -61,11 +61,11 @@ hook_event(HOOK_UPDATE, function ()
 
     if nearbyItem then
         local dist = lateral_dist_between_objects(nearbyItem, m.marioObj)
-        if dist < 5000 then
+        if dist < 3800 then
             if ambientPlaying == nil then
                 ambient_play(amb_ItemNearby)
             end
-            local t = 1 - (dist / 5000)
+            local t = 1 - (dist / 3800)
             if t < 0 then t = 0 end
             if t > 1 then t = 1 end
             stream_item_nearby_volume(t)
@@ -106,6 +106,12 @@ amb_ItemNearby = audio_stream_load("item_nearby.ogg")     audio_stream_set_loopi
 gSamples = {
 	audio_sample_load("fpsTransition.ogg"),
     audio_sample_load("itemGrab.ogg"),
+    audio_sample_load("powBeam.ogg"),
+    audio_sample_load("jump1.ogg"),
+    audio_sample_load("jump2.ogg"),
 }
 sFpsTransition = 1
 sItemGrab = 2
+sPowBeam = 3
+sJump1 = 4
+sJump2 = 5
