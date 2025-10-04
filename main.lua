@@ -1,6 +1,7 @@
 -- name: Prime64 [WIP]
 -- description: Prime 64 concept
 --------------------------------------------------------------------------------------------------------
+
 --------Testing--------
 function spawn_guns()
     local m = gMarioStates[0]
@@ -15,6 +16,7 @@ function spawn_guns()
         spawn_non_sync_object(id_bhvItemPowerup, E_MODEL_NONE, m.pos.x + 150, m.pos.y, m.pos.z + 150, function (powerup) powerup.oBehParams = 1 end) --Spawn Varia Suit Upgrade
     end
     if m.controller.buttonPressed & U_JPAD ~= 0 then
+        warp_to_level(LEVEL_TALLON_OVERWORLD, 1, 0)
     end
 end
 hook_event(HOOK_UPDATE, spawn_guns)
@@ -68,16 +70,26 @@ hook_event(HOOK_ON_HUD_RENDER, hud)
 -- Track custom jumps per player
 local customJumps = {}
 
+local inputMasks = {}
+for i = 0, MAX_PLAYERS-1 do
+    inputMasks[i] = {
+        down = 0,
+        pressed = 0
+    }
+end
+
 local function change_inputs(m)
     if m.playerIndex ~= 0 then return end
-    local pressed = m.controller.buttonPressed
+    local c = m.controller
+    local pressed = c.buttonPressed --Behold
+    local down = c.buttonDown --Behold :thinkface:
     if not customJumps[m.playerIndex] then
         customJumps[m.playerIndex] = 0
     end
     if m.action & ACT_FLAG_AIR == 0 then
         customJumps[m.playerIndex] = 0
     end
-    
+
     --Jump and Double Jump unless you walk off a cliff or something, then it starts at 1 jump already.
     if (pressed & A_BUTTON) ~= 0 and customJumps[m.playerIndex] < 2 then
         customJumps[m.playerIndex] = customJumps[m.playerIndex] + 1
@@ -94,7 +106,7 @@ local function change_inputs(m)
             m.vel.y = 65
             set_mario_action(m, ACT_FREEFALL, 0)
         end
-        return pressed & A_BUTTON ~(A_BUTTON)
+        return
     end
 
     if (pressed & B_BUTTON) ~= 0 then
@@ -114,20 +126,33 @@ local function change_inputs(m)
             end)
             local_play(sPowBeam, m.pos, 0.6)
         end
-        return pressed & ~B_BUTTON
+        return
     end
-    m.input = m.input & ~(INPUT_A_PRESSED | INPUT_B_PRESSED)
-end
 
+    local mask = (A_BUTTON|B_BUTTON)
+    -- going a different way about this
+    inputMasks[m.playerIndex].down = down & mask
+    inputMasks[m.playerIndex].pressed = pressed & mask
+    c.buttonDown = down & ~mask
+    c.buttonPressed = pressed & ~mask
+end
 hook_event(HOOK_BEFORE_MARIO_UPDATE, change_inputs)
 
+local function return_inputs(m)
+    local mask = inputMasks[m.playerIndex]
+    m.controller.buttonDown = m.controller.buttonDown | mask.down -- replace mario's inputs with originals
+    m.controller.buttonPressed = m.controller.buttonPressed | mask.pressed
+end
+hook_event(HOOK_MARIO_UPDATE, return_inputs)
+
 ------------------------------------------------------------------------
-hook_event(HOOK_BEFORE_SET_MARIO_ACTION, function(m, action)
+hook_event(HOOK_BEFORE_SET_MARIO_ACTION, function(m, action) --oK ITS back to how it was.
     if action == ACT_JUMP then
-        djui_chat_message_create("Cancelled action!")
         return 1
     end
     if action == ACT_PUNCHING or action == ACT_MOVE_PUNCHING or action == ACT_DIVE or action == ACT_JUMP_KICK or action == ACT_DOUBLE_JUMP then
         return 1
     end
 end)
+
+-- with the fix i'm attempting we shouldn't need this hook
